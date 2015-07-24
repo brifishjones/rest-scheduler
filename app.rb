@@ -14,6 +14,16 @@ get '/shifts' do
   format_response(Shift.all)
 end
 
+# As an employee, I want to know when I am working, by being able to see all of the shifts assigned to me.
+# GET /users/123/shifts
+# curl -i -H "authorization: 4:James Young" -w "\n" https://gentle-brushlands-1205.herokuapp.com/users/4/shifts
+get '/users/:id/shifts' do
+  halt 403 if authorize != params[:id].to_i || User.where(role: 'manager').find_by_id(params[:id].to_i)
+  shifts = Shift.where(employee_id: params[:id]).order(:start_time).order(:end_time)
+  halt 500 if shifts.empty?
+  format_response(shifts, only: [:start_time, :end_time])
+end
+
 
 private
 
