@@ -1,14 +1,12 @@
 class User < ActiveRecord::Base
-  has_many :managers, class_name: "Shift", foreign_key: "manager_id"
-  has_many :employees, class_name: "Shift", foreign_key: "employee_id"
+  has_many :managers, class_name: "Shift", foreign_key: "manager_id", through: :shifts
+  has_many :employees, class_name: "Shift", foreign_key: "employee_id", through: :shifts
 
   validates :name, presence: true
   validates :role, inclusion: { in: %w(employee manager)}
   # At least one of email or phone must be present
   validates :email, presence: true, unless: ->(user){user.phone.present?}
   validates :phone, presence: true, unless: ->(user){user.email.present?}
-
-
 end
 
 # == Schema Information
