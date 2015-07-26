@@ -18,13 +18,18 @@ User.create(name: 'Erin Hammond', role: 'employee', email: 'erin-h@mydomain.com'
 User.create(name: 'Janet Titian', role: 'employee', email: 'jtitian90@gmail.com', phone: '777-345-9998')
 User.create(name: 'Adam Gregory', role: 'employee', email: 'adam.gregory@gmail.com', phone: '888-123-7776')
 
+Time.zone = "America/Chicago"
 # create morning and evening shifts 
+def parse_time(date, time, timezone = "America/Chicago")
+  ActiveSupport::TimeZone.new(timezone).parse(date.strftime("%Y-%m-%d") + ' ' + time) 
+end
+
 def create_shift(date, morning, mgr_id, *emp_ids, brk)
-  start_time = morning ? ' 6:00' : ' 14:30' 
-  end_time = morning ? ' 14:30' : ' 23:00' 
+  start_time = morning ? '6:00' : '14:30' 
+  end_time = morning ? '14:30' : '23:00' 
 
   emp_ids.each do |eid|
-    Shift.create(manager_id: mgr_id, employee_id: eid, break: brk, start_time: date.strftime("%Y-%m-%d") + start_time, end_time: date.strftime("%Y-%m-%d") + end_time)
+    Shift.create(manager_id: mgr_id, employee_id: eid, break: brk, start_time: parse_time(date, start_time), end_time: parse_time(date, end_time))
   end
 end
 
@@ -33,22 +38,10 @@ end
     create_shift(date, true, 3, *[8, nil], 0.5)
     create_shift(date, false, 3, *[9, nil], 0.5)
     if date.wday == 6   # create shift that starts on Saturday, ends on Sunday
-      Shift.create(manager_id: 3, employee_id: 10, break: 0.75, start_time: date.strftime("%Y-%m-%d") + ' 19:00', end_time: (date + 1.day).strftime("%Y-%m-%d") + ' 3:30')
+      Shift.create(manager_id: 3, employee_id: 10, break: 0.75, start_time: parse_time(date, '19:00'), end_time: parse_time(date + 1.day, '3:30'))
     end
   else   # weekday
     create_shift(date, true, 1, *[4, 5, nil], 0.5) 
     create_shift(date, false, 2, *[6, 7, nil], 0.5) 
   end
 end
-
-
-#    Shift.create(manager_id: 1, employee_id: 4, break: 0.5, start_time: date.strftime("%Y-%m-%d") + morning_start_time, end_time: date.strftime("%Y-%m-%d") + morning_end_time)
-#    Shift.create(manager_id: 1, employee_id: 5, break: 0.5, start_time: date.strftime("%Y-%m-%d") + morning_start_time, end_time: date.strftime("%Y-%m-%d") + morning_end_time)
-#    Shift.create(manager_id: 1, break: 0.5, start_time: date.strftime("%Y-%m-%d") + morning_start_time, end_time: date.strftime("%Y-%m-%d") + morning_end_time)
-#    Shift.create(manager_id: 2, employee_id: 6, break: 0.5, start_time: date.strftime("%Y-%m-%d") + evening_start_time, end_time: date.strftime("%Y-%m-%d") + evening_end_time)
-#    Shift.create(manager_id: 2, employee_id: 7, break: 0.5, start_time: date.strftime("%Y-%m-%d") + evening_start_time, end_time: date.strftime("%Y-%m-%d") + evening_end_time)
-#    Shift.create(manager_id: 2, break: 0.5, start_time: date.strftime("%Y-%m-%d") + evening_start_time, end_time: date.strftime("%Y-%m-%d") + evening_end_time)
-#Shift.create(manager_id: 1, employee_id: 4, break: 0.5, start_time: '2015-08-03 6:00', end_time: '2015-08-03 14:30')
-#Shift.create(manager_id: 1, employee_id: 5, break: 0.75, start_time: '2015-08-03 8:00', end_time: '2015-08-03 16:30')
-
-#Shift.create(manager_id: 1, employee_id: 4, break: 0.75, start_time: '2015-08-04 8:00', end_time: '2015-08-04 16:30')

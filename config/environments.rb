@@ -11,5 +11,7 @@ configure :production, :development do
 			:database => db.path[1..-1],
 			:encoding => 'utf8'
 	)
-end
+  ActiveRecord::Base.time_zone_aware_attributes = true
 
+  set :show_exceptions, false
+end
