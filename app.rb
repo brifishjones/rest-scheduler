@@ -55,6 +55,16 @@ get '/co-workers/:id' do
   format_response(coworkers)
 end
 
+# As an employee, I want to be able to contact my managers, by seeing manager contact information for my shifts.
+# GET managers/123
+# curl -i -H "authorization: 7:Sophia Sanders" -w "\n" https://gentle-brushlands-1205.herokuapp.com/managers/7
+get '/managers/:id' do
+  halt 403 if authorize != params[:id].to_i || User.where(role: 'manager').find_by_id(params[:id].to_i)
+  shifts = Shift.where(employee_id: params[:id]).order(:start_time).order(:end_time)
+  halt 200, format_response(no_records_found) if shifts.empty?
+  format_response(shifts, {only: [:start_time, :end_time], include: {manager: {only: [:name, :email, :phone]}}})
+end
+
 
 private
 
