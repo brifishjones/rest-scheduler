@@ -37,8 +37,9 @@ end
   if date.wday == 0 || date.wday == 6   # weekend
     create_shift(date, true, 3, *[8, nil], 0.5)
     create_shift(date, false, 3, *[9, nil], 0.5)
-    if date.wday == 6   # create shift that starts on Saturday, ends on Sunday
+    if date.wday == 6   # create shifts that starts on Saturday, ends on Sunday
       Shift.create(manager_id: 3, employee_id: 10, break: 0.75, start_time: parse_time(date, '19:00'), end_time: parse_time(date + 1.day, '3:30'))
+      Shift.create(manager_id: 3, employee_id: 11, break: 0.75, start_time: parse_time(date, '19:00'), end_time: parse_time(date + 1.day, '3:30'))
     end
   else   # weekday
     create_shift(date, true, 1, *[4, 5, nil], 0.5) 
