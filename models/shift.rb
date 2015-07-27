@@ -2,8 +2,6 @@ class Shift < ActiveRecord::Base
   belongs_to :manager, class_name: 'User'
   belongs_to :employee, class_name: 'User'
 
-  scope :conflict, ->(params = nil) {where('employee_id = ? and (start_time >= ? and start_time < ? or end_time > ? and end_time <= ?)', params[:employee_id], params[:start_time], params[:end_time], params[:start_time], params[:end_time])}
-
   validates :break , numericality: true
   validates :start_time, presence: true
   validates :end_time, presence: true
@@ -11,6 +9,7 @@ class Shift < ActiveRecord::Base
   validate :manager_id_exists
   validate :employee_id_exists
   validate :start_time_less_than_end_time
+  validate :employee_id_scheduling_conflict
 
   # Compute weekly total hours beginning at midnight on Monday in Time.zone for the specified shifts
   def self.total_weekly_hours(shifts)
@@ -64,6 +63,14 @@ class Shift < ActiveRecord::Base
     if start_time.present? && end_time.present?
       errors.add(:end_time, "cannot be before start time") if start_time > end_time
       errors.add(:end_time, "shift length cannot be zero") if start_time == end_time
+    end
+  end
+
+  def employee_id_scheduling_conflict
+    return unless employee_id.present? && start_time.present? && end_time.present?
+    id_update = id.present? ? id : -1   # id is not present when new record is being saved
+    unless Shift.where('id != ? and employee_id = ? and (start_time >= ? and start_time < ? or end_time > ? and end_time <= ?)', id_update, employee_id, start_time, end_time, start_time, end_time).first.nil?
+      errors.add(:employee_id, "user is already scheduled during this time period")
     end
   end
 

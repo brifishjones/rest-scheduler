@@ -92,7 +92,6 @@ post '/shifts' do
   params[:manager_id] = params[:manager_id].nil? ? mgr.id : params[:manager_id]
 
   shift = Shift.new(params)
-  halt 200, format_response(shift_conflict) if shf = Shift.conflict(shift).first
   if shift.save
     status 201
     format_response(shift)
@@ -111,6 +110,31 @@ get '/shifts/:start_time/:end_time' do
   shifts = Shift.where("end_time >= ? AND start_time <= ?", start_timezone, end_timezone).order(:start_time).order(:end_time)
   format_response(shifts, {only: [:id, :start_time, :end_time], include: {manager: {only: [:id, :name]}, employee: {only: [:id, :name]}}})
 end
+
+# As a manager, I want to be able to change a shift, by updating the time details.
+# As a manager, I want to be able to assign a shift, by changing the employee that will work a shift.
+# POST /shifts/123
+# curl -i -H "authorization: 1:Alan Smith" http://gentle-brushlands-1205.herokuapp.com/shifts/123 -d "start_time=2015-08-11 8:15&end_time=2015-08-11 12:30"
+# curl -i -H "authorization: 1:Alan Smith" http://gentle-brushlands-1205.herokuapp.com/shifts/123 -d "employee_id=7"
+# curl -i -H "authorization: 1:Alan Smith" http://gentle-brushlands-1205.herokuapp.com/shifts/123 -d "employee_id=0"  to mark shift unfilled
+post '/shifts/:id' do
+  halt 403 unless mgr = User.where(role: 'manager').find_by_id(authorize)
+  shift = Shift.find(params[:id])
+  halt 200, format_response(no_records_found) if shift.nil?
+  start_time = params[:start_time] != nil ? params[:start_time] : shift.start_time
+  end_time = params[:end_time] != nil ? params[:end_time] : shift.end_time
+  #employee_id = params[:employee_id]
+  employee_id = params[:employee_id] != nil ? params[:employee_id] : shift.employee_id
+  employee_id = nil if employee_id == '0'
+
+  if shift.update(employee_id: employee_id, start_time: start_time, end_time: end_time)
+    status 201
+    format_response(shift)
+  else
+    error 200, format_response(shift.errors.messages)
+  end
+end
+
 
 
 private
@@ -136,10 +160,6 @@ end
 
 def no_records_found
   [{"200 OK":"Number of records returned = 0"}]
-end
-
-def shift_conflict
-  [{"200 OK":"User is already scheduled during this time period"}]
 end
 
 def datetime_format
