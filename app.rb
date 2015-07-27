@@ -77,11 +77,35 @@ get '/managers/:id' do
   format_response(shifts, {only: [:start_time, :end_time], include: {manager: {only: [:name, :email, :phone]}}})
 end
 
+# As a manager, I want to schedule my employees, by creating shifts for any employee.
+# POST /shifts
+# {
+#   manager_id: 3  (defaults to manager creating shift, defaults to manager creating shift)
+#   employee_id: 5 (optional)
+#   break: .25  (optional)
+#   start_time: 2015-08-11 1:15 (in Time.zone, required)
+#   end_time: 2015-08-11 5:30 (in Time.zone, required)
+# }
+# curl -i -H "authorization: 3:Tara DeLong" -w "\n" https://gentle-brushlands-1205.herokuapp.com/shifts -d "employee_id=5&break=0.25&start_time=2015-08-11 1:15&end_time=2015-08-11 5:30"
+post '/shifts' do
+  halt 403 unless mgr = User.where(role: 'manager').find_by_id(authorize)
+  params[:manager_id] = params[:manager_id].nil? ? mgr.id : params[:manager_id]
+
+  shift = Shift.new(params)
+  halt 200, format_response(shift_conflict) if shf = Shift.conflict(shift).first
+  if shift.save
+    status 201
+    format_response(shift)
+  else
+    error 200, format_response(shift.errors)
+  end
+end
+
 
 private
 
 # Authorization is passed in the url header in the form id:name
-# curl -i -H "authorization: 1:Alan Smith" -w "\n" localhost:4567/shifts
+# curl -i -H "authorization: 1:Alan Smith" -w "\n" https://gentle-brushlands-1205.herokuapp.com/shifts
 def authorize
   if env['HTTP_AUTHORIZATION'] && env['HTTP_AUTHORIZATION'].split(':').length == 2
     auth_id_user = env['HTTP_AUTHORIZATION'].split(':')
@@ -92,15 +116,19 @@ def authorize
 end
 
 error 403 do
-  '{"403 Forbidden":"Invalid access key or unauthorized to view record"}'
+  format_response([{"403 Forbidden":"Invalid access key or unauthorized to view record"}])
 end
 
-error 404 do
-  '{"404 Not Found":"Nothing matches the request URI"}'
+error Sinatra::NotFound do
+  format_response([{"404 Not Found":"Nothing matches the request URI"}])
 end
 
 def no_records_found
   [{"200 OK":"Number of records returned = 0"}]
+end
+
+def shift_conflict
+  [{"200 OK":"User is already scheduled during this time period"}]
 end
 
 def datetime_format
