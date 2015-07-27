@@ -118,7 +118,7 @@ end
 # curl -i -H "authorization: 1:Alan Smith" http://gentle-brushlands-1205.herokuapp.com/shifts/123 -d "employee_id=7"
 # curl -i -H "authorization: 1:Alan Smith" http://gentle-brushlands-1205.herokuapp.com/shifts/123 -d "employee_id=0"  to mark shift unfilled
 post '/shifts/:id' do
-  halt 403 unless mgr = User.where(role: 'manager').find_by_id(authorize)
+  halt 403 unless User.where(role: 'manager').find_by_id(authorize)
   shift = Shift.find(params[:id])
   halt 200, format_response(no_records_found) if shift.nil?
   start_time = params[:start_time] != nil ? params[:start_time] : shift.start_time
@@ -135,6 +135,15 @@ post '/shifts/:id' do
   end
 end
 
+# As a manager, I want to contact an employee, by seeing employee details.
+# GET /employees/123
+# curl -i -H "authorization: 2:Bethany Huebner" -w "\n" https://gentle-brushlands-1205.herokuapp.com/employees/5
+get '/employees/:id' do
+  halt 403 unless User.where(role: 'manager').find_by_id(authorize)
+  user = User.where(role: 'employee').find_by_id(params[:id])
+  halt 200, format_response(no_records_found) if user.nil?
+  format_response(user, only: [:id, :name, :email, :phone])
+end
 
 
 private
