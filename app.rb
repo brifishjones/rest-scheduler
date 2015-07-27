@@ -101,6 +101,17 @@ post '/shifts' do
   end
 end
 
+# As a manager, I want to see the schedule, by listing shifts within a specific time period.
+# GET /shifts/2015-08-01T8:00/2015-09-01T23:00
+# curl -i -H "authorization: 2:Bethany Huebner" -w "\n" https://gentle-brushlands-1205.herokuapp.com/shifts/2015-08-01T8:00/2015-09-01T23:00
+get '/shifts/:start_time/:end_time' do
+  halt 403 unless User.where(role: 'manager').find_by_id(authorize)
+  start_timezone = valid_param_time(params[:start_time])
+  end_timezone = valid_param_time(params[:end_time])
+  shifts = Shift.where("end_time >= ? AND start_time <= ?", start_timezone, end_timezone).order(:start_time).order(:end_time)
+  format_response(shifts, {only: [:id, :start_time, :end_time], include: {manager: {only: [:id, :name]}, employee: {only: [:id, :name]}}})
+end
+
 
 private
 
@@ -133,6 +144,15 @@ end
 
 def datetime_format
   "%Y-%m-%d %H:%M:%S %z"
+end
+
+# confirm formatting of datetime params
+def valid_param_time(pt)
+  begin 
+    Time.strptime(pt, "%Y-%m-%dT%H:%M")
+  rescue 
+    halt 404
+  end
 end
 
 def format_response(data, args = nil)
