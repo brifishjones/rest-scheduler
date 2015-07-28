@@ -46,12 +46,13 @@ get '/co-workers/:id' do
   coworkers = []
   my_shifts.each do |i|
     coworker_shifts = shifts.select {|shft| shft.employee_id != i.employee_id && shft.start_time == i.start_time && shft.end_time == i.end_time}
-    halt 200, format_response(no_records_found) if coworker_shifts.empty?
-    employees = []
-    coworker_shifts.each do |j|
-      employees << j.employee.name if j.employee != nil
+    unless coworker_shifts.empty?
+      employees = []
+      coworker_shifts.each do |j|
+        employees << j.employee.name if j.employee != nil
+      end
+      coworkers << {'start_time': coworker_shifts.first.start_time.strftime(datetime_format), 'end_time': coworker_shifts.first.end_time.strftime(datetime_format), 'co-workers': employees}
     end
-    coworkers << {'start_time': coworker_shifts.first.start_time.strftime(datetime_format), 'end_time': coworker_shifts.first.end_time.strftime(datetime_format), 'co-workers': employees}
   end
 
   format_response(coworkers)
