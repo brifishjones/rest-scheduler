@@ -13,23 +13,31 @@ class Shift < ActiveRecord::Base
 
   # Compute weekly total hours beginning at midnight on Monday in Time.zone for the specified shifts
   def self.total_weekly_hours(shifts)
-    weekly_start_time = Time.zone.now.beginning_of_week
-    return [{'week': weekly_start_time.to_date, 'hours': '0'}] if shifts.nil?
+    return [{'week': Time.zone.now.beginning_of_week.to_date, 'hours': '0'}] if shifts.nil?
 
     # shifts must be sorted by start time and end time
     shifts = shifts.order(:start_time).order(:end_time)
+    weekly_start_time = shifts.first.start_time.beginning_of_week
     weekly_total = []
     weekly_hours = 0.0
     hours_next_week = 0.0
 
     shifts.each do |s|
-      if s.start_time >= weekly_start_time + 7.days
+      if hours_next_week > 0.0 && s.start_time >= weekly_start_time + 14.days 
+        # special case: shift starts on Sunday, ends on Monday and no shifts the following week 
+        weekly_total << {'week': (weekly_start_time + 7.days).to_date, 'hours': hours_next_week}
+        weekly_start_time = s.start_time.beginning_of_week 
+        weekly_hours = 0.0
+        hours_next_week = 0.0
+      elsif s.start_time >= weekly_start_time + 7.days
         weekly_total << {'week': weekly_start_time.to_date, 'hours': weekly_hours}
-        weekly_start_time += 7.days
+        weekly_start_time = s.start_time.beginning_of_week 
         weekly_hours = hours_next_week
         hours_next_week = 0.0
       end
-      if s.end_time >= weekly_start_time + 7.days  # special case: shift starts on Sunday, ends on Monday 
+
+      if s.end_time >= weekly_start_time + 7.days
+        # special case: shift starts on Sunday, ends on Monday
         weekly_hours += ((weekly_start_time + 7.days) - s.start_time) / 3600.0
         hours_next_week += (s.end_time - (weekly_start_time + 7.days)) / 3600.0
       else
@@ -38,7 +46,8 @@ class Shift < ActiveRecord::Base
     end
 
     weekly_total << {'week': weekly_start_time.to_date, 'hours': weekly_hours}
-    weekly_total << {'week': (weekly_start_time + 7.days).to_date, 'hours': hours_next_week} if hours_next_week > 0.0  # special case: last shift starts on Sunday, ends on Monday
+    # special case: last shift starts on Sunday, ends on Monday
+    weekly_total << {'week': (weekly_start_time + 7.days).to_date, 'hours': hours_next_week} if hours_next_week > 0.0
     return weekly_total
   end
 

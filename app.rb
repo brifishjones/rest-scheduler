@@ -126,7 +126,6 @@ post '/shifts/:id' do
   halt 200, format_response(no_records_found) if shift.nil?
   start_time = params[:start_time] != nil ? params[:start_time] : shift.start_time
   end_time = params[:end_time] != nil ? params[:end_time] : shift.end_time
-  #employee_id = params[:employee_id]
   employee_id = params[:employee_id] != nil ? params[:employee_id] : shift.employee_id
   employee_id = nil if employee_id == '0'
 
@@ -189,7 +188,6 @@ end
 
 def format_response(data, args = nil)
   request.accept.each do |type|
-    #return data.to_xml(args) if type.downcase.eql? 'text/xml'
     return data.as_json(args).to_xml if type.downcase.eql? 'text/xml'
     return data.as_json(args).to_yaml if type.downcase.eql? 'text/x-yaml'
     return JSON.pretty_generate(data.as_json(args))
