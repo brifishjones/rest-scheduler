@@ -10,11 +10,13 @@ before do
 end
 
 # for testing only. Not part of the API
+# curl -i -w "\n" https://gentle-brushlands-1205.herokuapp.com/users
 get '/users' do
   format_response(User.all, only: [:id, :name])
 end
 
 # for testing only. Not part of the API
+# curl -i -w "\n" https://gentle-brushlands-1205.herokuapp.com/shifts
 get '/shifts' do
   format_response(Shift.all)
 end
@@ -80,7 +82,7 @@ end
 # As a manager, I want to schedule my employees, by creating shifts for any employee.
 # POST /shifts
 # {
-#   manager_id: 3  (defaults to manager creating shift, defaults to manager creating shift)
+#   manager_id: 3  (defaults to manager creating shift)
 #   employee_id: 5 (optional)
 #   break: .25  (optional)
 #   start_time: 2015-08-11 1:15 (in Time.zone, required)
